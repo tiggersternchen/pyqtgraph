@@ -1,46 +1,39 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
-from . import utils
 from collections import namedtuple
 from pyqtgraph import Qt
+from pyqtgraph.python2_3 import basestring
+from .ExampleApp import examples
+
 import errno
 import importlib
 import itertools
 import pytest
 import os, sys
+import platform
 import subprocess
 import time
+if __name__ == "__main__" and (__package__ is None or __package__==''):
+    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, parent_dir)
+    import examples
+    __package__ = "examples"
+
+
+def buildFileList(examples, files=None):
+    if files is None:
+        files = [("Example App", "test_ExampleApp.py")]
+    for key, val in examples.items():
+        if isinstance(val, basestring):
+            files.append((key,val))
+        else:
+            buildFileList(val, files)
+    return files
+
 
 
 path = os.path.abspath(os.path.dirname(__file__))
-
-# printing on travis ci frequently leads to "interrupted system call" errors.
-# as a workaround, we overwrite the built-in print function (bleh)
-if os.getenv('TRAVIS') is not None:
-    if sys.version_info[0] < 3:
-        import __builtin__ as builtins
-    else:
-        import builtins
-
-    def flaky_print(*args):
-        """Wrapper for print that retries in case of IOError.
-        """
-        count = 0
-        while count < 5:
-            count += 1
-            try:
-                orig_print(*args)
-                break
-            except IOError:
-                if count >= 5:
-                    raise
-                pass
-    orig_print = builtins.print
-    builtins.print = flaky_print
-    print("Installed wrapper for flaky print.")
-
-
-files = sorted(set(utils.buildFileList(utils.examples)))
+files = sorted(set(buildFileList(examples)))
 frontends = {
     Qt.PYQT4: False,
     Qt.PYQT5: False,
@@ -77,75 +70,83 @@ conditionalExamples = {
         )
     ),
     'GLVolumeItem.py': exceptionCondition(
-        not(sys.platform == "darwin" and
-            sys.version_info[0] == 2 and
-            (frontends[Qt.PYQT4] or frontends[Qt.PYSIDE])),
+        not(platform.system() == "Darwin" and
+            tuple(map(int, platform.mac_ver()[0].split("."))) >= (10, 16) and 
+            (sys.version_info <= (3, 8, 7) or
+            (sys.version_info >= (3, 9) and sys.version_info < (3, 9, 1)))),
         reason=(
-            "glClear does not work on macOS + Python2.7 + Qt4: ",
-            "https://github.com/pyqtgraph/pyqtgraph/issues/939"
+            "pyopenGL cannot find openGL libray on big sur: "
+            "https://github.com/python/cpython/pull/21241"
         )
     ),
     'GLIsosurface.py': exceptionCondition(
-        not(sys.platform == "darwin" and
-            sys.version_info[0] == 2 and
-            (frontends[Qt.PYQT4] or frontends[Qt.PYSIDE])),
+        not(platform.system() == "Darwin" and
+            tuple(map(int, platform.mac_ver()[0].split("."))) >= (10, 16) and 
+            (sys.version_info <= (3, 8, 7) or
+            (sys.version_info >= (3, 9) and sys.version_info < (3, 9, 1)))),
         reason=(
-            "glClear does not work on macOS + Python2.7 + Qt4: ",
-            "https://github.com/pyqtgraph/pyqtgraph/issues/939"
+            "pyopenGL cannot find openGL libray on big sur: "
+            "https://github.com/python/cpython/pull/21241"
         )
     ),
     'GLSurfacePlot.py': exceptionCondition(
-        not(sys.platform == "darwin" and
-            sys.version_info[0] == 2 and
-            (frontends[Qt.PYQT4] or frontends[Qt.PYSIDE])),
+        not(platform.system() == "Darwin" and
+            tuple(map(int, platform.mac_ver()[0].split("."))) >= (10, 16) and 
+            (sys.version_info <= (3, 8, 7) or
+            (sys.version_info >= (3, 9) and sys.version_info < (3, 9, 1)))),
         reason=(
-            "glClear does not work on macOS + Python2.7 + Qt4: ",
-            "https://github.com/pyqtgraph/pyqtgraph/issues/939"
+            "pyopenGL cannot find openGL libray on big sur: "
+            "https://github.com/python/cpython/pull/21241"
         )
     ),
     'GLScatterPlotItem.py': exceptionCondition(
-        not(sys.platform == "darwin" and
-            sys.version_info[0] == 2 and
-            (frontends[Qt.PYQT4] or frontends[Qt.PYSIDE])),
+        not(platform.system() == "Darwin" and
+            tuple(map(int, platform.mac_ver()[0].split("."))) >= (10, 16) and 
+            (sys.version_info <= (3, 8, 7) or
+            (sys.version_info >= (3, 9) and sys.version_info < (3, 9, 1)))),
         reason=(
-            "glClear does not work on macOS + Python2.7 + Qt4: ",
-            "https://github.com/pyqtgraph/pyqtgraph/issues/939"
+            "pyopenGL cannot find openGL libray on big sur: "
+            "https://github.com/python/cpython/pull/21241"
         )
     ),
     'GLshaders.py': exceptionCondition(
-        not(sys.platform == "darwin" and
-            sys.version_info[0] == 2 and
-            (frontends[Qt.PYQT4] or frontends[Qt.PYSIDE])),
+        not(platform.system() == "Darwin" and
+            tuple(map(int, platform.mac_ver()[0].split("."))) >= (10, 16) and 
+            (sys.version_info <= (3, 8, 7) or
+            (sys.version_info >= (3, 9) and sys.version_info < (3, 9, 1)))),
         reason=(
-            "glClear does not work on macOS + Python2.7 + Qt4: ",
-            "https://github.com/pyqtgraph/pyqtgraph/issues/939"
+            "pyopenGL cannot find openGL libray on big sur: "
+            "https://github.com/python/cpython/pull/21241"
         )
     ),
     'GLLinePlotItem.py': exceptionCondition(
-        not(sys.platform == "darwin" and
-            sys.version_info[0] == 2 and
-            (frontends[Qt.PYQT4] or frontends[Qt.PYSIDE])),
+        not(platform.system() == "Darwin" and
+            tuple(map(int, platform.mac_ver()[0].split("."))) >= (10, 16) and 
+            (sys.version_info <= (3, 8, 7) or
+            (sys.version_info >= (3, 9) and sys.version_info < (3, 9, 1)))),
         reason=(
-            "glClear does not work on macOS + Python2.7 + Qt4: ",
-            "https://github.com/pyqtgraph/pyqtgraph/issues/939"
+            "pyopenGL cannot find openGL libray on big sur: "
+            "https://github.com/python/cpython/pull/21241"
         )
     ),
     'GLMeshItem.py': exceptionCondition(
-        not(sys.platform == "darwin" and
-            sys.version_info[0] == 2 and
-            (frontends[Qt.PYQT4] or frontends[Qt.PYSIDE])),
+        not(platform.system() == "Darwin" and
+            tuple(map(int, platform.mac_ver()[0].split("."))) >= (10, 16) and 
+            (sys.version_info <= (3, 8, 7) or
+            (sys.version_info >= (3, 9) and sys.version_info < (3, 9, 1)))),
         reason=(
-            "glClear does not work on macOS + Python2.7 + Qt4: ",
-            "https://github.com/pyqtgraph/pyqtgraph/issues/939"
+            "pyopenGL cannot find openGL libray on big sur: "
+            "https://github.com/python/cpython/pull/21241"
         )
     ),
     'GLImageItem.py': exceptionCondition(
-        not(sys.platform == "darwin" and
-            sys.version_info[0] == 2 and
-            (frontends[Qt.PYQT4] or frontends[Qt.PYSIDE])),
+        not(platform.system() == "Darwin" and
+            tuple(map(int, platform.mac_ver()[0].split("."))) >= (10, 16) and 
+            (sys.version_info <= (3, 8, 7) or
+            (sys.version_info >= (3, 9) and sys.version_info < (3, 9, 1)))),
         reason=(
-            "glClear does not work on macOS + Python2.7 + Qt4: ",
-            "https://github.com/pyqtgraph/pyqtgraph/issues/939"
+            "pyopenGL cannot find openGL libray on big sur: "
+            "https://github.com/python/cpython/pull/21241"
         )
     )
 }

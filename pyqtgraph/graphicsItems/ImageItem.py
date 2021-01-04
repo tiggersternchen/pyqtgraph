@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import division
 
 from ..Qt import QtGui, QtCore
@@ -370,22 +371,11 @@ class ImageItem(GraphicsObject):
             lut = None
 
         if self.autoDownsample:
-            # reduce dimensions of image based on screen resolution
-            o = self.mapToDevice(QtCore.QPointF(0,0))
-            x = self.mapToDevice(QtCore.QPointF(1,0))
-            y = self.mapToDevice(QtCore.QPointF(0,1))
-
-            # Check if graphics view is too small to render anything
-            if o is None or x is None or y is None:
-                return
-
-            w = Point(x-o).length()
-            h = Point(y-o).length()
-            if w == 0 or h == 0:
+            xds, yds = self._computeDownsampleFactors()
+            if xds is None:
                 self.qimage = None
                 return
-            xds = max(1, int(1.0 / w))
-            yds = max(1, int(1.0 / h))
+
             axes = [1, 0] if self.axisOrder == 'row-major' else [0, 1]
             image = fn.downsample(self.image, xds, axis=axes[0])
             image = fn.downsample(image, yds, axis=axes[1])
@@ -501,7 +491,9 @@ class ImageItem(GraphicsObject):
             if stepData.dtype.kind in "ui":
                 # For integer data, we select the bins carefully to avoid aliasing
                 step = np.ceil((mx-mn) / 500.)
-                bins = np.arange(mn, mx+1.01*step, step, dtype=np.int)
+                bins = []
+                if step > 0.0:
+                    bins = np.arange(mn, mx+1.01*step, step, dtype=np.int)
             else:
                 # for float data, let numpy select the bins.
                 bins = np.linspace(mn, mx, 500)
@@ -552,19 +544,27 @@ class ImageItem(GraphicsObject):
 
     def viewTransformChanged(self):
         if self.autoDownsample:
-            o = self.mapToDevice(QtCore.QPointF(0,0))
-            x = self.mapToDevice(QtCore.QPointF(1,0))
-            y = self.mapToDevice(QtCore.QPointF(0,1))
-            w = Point(x-o).length()
-            h = Point(y-o).length()
-            if w == 0 or h == 0:
+            xds, yds = self._computeDownsampleFactors()
+            if xds is None:
                 self.qimage = None
                 return
-            xds = max(1, int(1.0 / w))
-            yds = max(1, int(1.0 / h))
             if (xds, yds) != self._lastDownsample:
                 self.qimage = None
                 self.update()
+
+    def _computeDownsampleFactors(self):
+        # reduce dimensions of image based on screen resolution
+        o = self.mapToDevice(QtCore.QPointF(0, 0))
+        x = self.mapToDevice(QtCore.QPointF(1, 0))
+        y = self.mapToDevice(QtCore.QPointF(0, 1))
+        # scene may not be available yet
+        if o is None:
+            return None, None
+        w = Point(x - o).length()
+        h = Point(y - o).length()
+        if w == 0 or h == 0:
+            return None, None
+        return max(1, int(1.0 / w)), max(1, int(1.0 / h))
 
     def mouseDragEvent(self, ev):
         if ev.button() != QtCore.Qt.LeftButton:

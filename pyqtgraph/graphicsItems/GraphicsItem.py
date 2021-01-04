@@ -1,3 +1,4 @@
+import warnings
 from functools import reduce
 from ..Qt import QtGui, QtCore, isQObjectAlive
 from ..GraphicsScene import GraphicsScene
@@ -36,6 +37,7 @@ class GraphicsItem(object):
         self._viewBox = None
         self._connectedView = None
         self._exportOpts = False   ## If False, not currently exporting. Otherwise, contains dict of export options.
+        self._cachedView = None
         if register is not None and register:
             warnings.warn(
                 "'register' argument is deprecated and does nothing",
@@ -102,10 +104,6 @@ class GraphicsItem(object):
         Return the transform that converts local item coordinates to device coordinates (usually pixels).
         Extends deviceTransform to automatically determine the viewportTransform.
         """
-        if self._exportOpts is not False and 'painter' in self._exportOpts: ## currently exporting; device transform may be different.
-            scaler = self._exportOpts.get('resolutionScale', 1.0)
-            return self.sceneTransform() * QtGui.QTransform(scaler, 0, 0, scaler, 1, 1)
-
         if viewportTransform is None:
             view = self.getViewWidget()
             if view is None:
@@ -154,6 +152,10 @@ class GraphicsItem(object):
     def viewRect(self):
         """Return the visible bounds of this item's ViewBox or GraphicsWidget,
         in the local coordinate system of the item."""
+        if self._cachedView is not None:
+            return self._cachedView
+
+        # Note that in cases of early returns here, the view cache stays empty (None).
         view = self.getViewBox()
         if view is None:
             return None
@@ -163,10 +165,12 @@ class GraphicsItem(object):
 
         bounds = bounds.normalized()
         
+        self._cachedView = bounds
+            
         ## nah.
         #for p in self.getBoundingParents():
             #bounds &= self.mapRectFromScene(p.sceneBoundingRect())
-            
+
         return bounds
         
         
@@ -548,8 +552,9 @@ class GraphicsItem(object):
         """
         Called whenever the transformation matrix of the view has changed.
         (eg, the view range has changed or the view was resized)
+        Invalidates the viewRect cache.
         """
-        pass
+        self._cachedView = None
     
     #def prepareGeometryChange(self):
         #self._qtBaseClass.prepareGeometryChange(self)
